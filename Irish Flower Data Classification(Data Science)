@@ -1,0 +1,14 @@
+import requests
+from bs4 import BeautifulSoup
+url = "https://en.wikipedia.org/wiki/Iris_flower_data_set"
+res = requests.get(url)
+soup = BeautifulSoup(res.text, "html.parser")
+content = soup.find('div', class_='mw-parser-output')
+if content:
+    for tag in content.find_all(['h2', 'p']):
+        if tag.name == 'h2':
+            print("\n", tag.get_text(strip=True).replace("[edit]", ""))
+        elif tag.name == 'p':
+            print(" -", tag.get_text(strip=True))
+else:
+    print("Could not find the main content div ('mw-parser-output).")
