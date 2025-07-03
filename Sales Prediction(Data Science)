@@ -1,0 +1,73 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_squared_error
+import matplotlib.pyplot as plt
+import os
+
+# --- File Loading Section ---
+# Update this path if your file is in a different location
+file_path = r"C:\Users\ABHYUDAYA\Desktop\test1.csv"
+
+# Check if the file exists before loading
+if not os.path.exists(file_path):
+    raise FileNotFoundError(f"File not found: {file_path}")
+
+# Try different encodings if you get a UnicodeDecodeError
+try:
+    data = pd.read_csv(file_path, encoding='utf-8')
+except UnicodeDecodeError:
+    data = pd.read_csv(file_path, encoding='latin1')
+
+print("First five rows of the data:")
+print(data.head())
+
+# --- Data Preparation Section ---
+
+# Ensure required columns exist
+required_columns = ['price', 'quantity', 'date']
+for col in required_columns:
+    if col not in data.columns:
+        raise ValueError(f"Missing required column: {col}")
+
+# Calculate revenue
+data['revenue'] = data['price'] * data['quantity']
+
+# Convert 'date' to datetime and extract month
+data['date'] = pd.to_datetime(data['date'], errors='coerce')
+data['month'] = data['date'].dt.month
+
+# Fill missing values with column means
+data.fillna(data.mean(numeric_only=True), inplace=True)
+
+# One-hot encode a categorical column if it exists (replace 'category_column' as needed)
+if 'category_column' in data.columns:
+    data = pd.get_dummies(data, columns=['category_column'])
+
+# --- Feature Selection ---
+features = ['price', 'quantity', 'month']
+X = data[features]
+y = data['revenue']
+
+# --- Train/Test Split ---
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# --- Model Training ---
+model = LinearRegression()
+model.fit(x_train, y_train)
+y_pred = model.predict(x_test)
+
+# --- Evaluation ---
+print("R2 score:", r2_score(y_test, y_pred))
+print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
+
+# --- Visualization ---
+plt.figure(figsize=(10, 6))
+plt.scatter(range(len(y_test)), y_test, color='blue', label='Actual Sales')
+plt.scatter(range(len(y_pred)), y_pred, color='red', label='Predicted Sales', alpha=0.7)
+plt.title('Actual vs Predicted Sales')
+plt.xlabel('Sample')
+plt.ylabel('Revenue')
+plt.legend()
+plt.show()
